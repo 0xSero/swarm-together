@@ -4,7 +4,7 @@
 use std::path::PathBuf;
 use tracing::{info, warn};
 use tracing_subscriber::EnvFilter;
-use agent_manager::{db::Database, error::AppResult};
+use agent_manager::{db::Database, error::AppResult, commands::connectors::ConnectorState};
 
 fn main() -> AppResult<()> {
   init_logging();
@@ -33,9 +33,13 @@ fn main() -> AppResult<()> {
   });
 
   tauri::Builder::default()
+    .manage(ConnectorState::new())
     .invoke_handler(tauri::generate_handler![
       cmd_list_sessions,
       cmd_create_session,
+      agent_manager::commands::connectors::init_connector,
+      agent_manager::commands::connectors::get_connector_health,
+      agent_manager::commands::connectors::get_connector_metrics,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
