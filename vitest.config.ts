@@ -8,9 +8,11 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: [],
+    exclude: ['node_modules', 'dist', 'e2e', 'src-tauri'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
+      exclude: ['e2e/**', 'src-tauri/**', '**/*.spec.ts'],
     },
   },
   resolve: {
