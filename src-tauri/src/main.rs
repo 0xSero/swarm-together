@@ -4,7 +4,12 @@
 use std::path::PathBuf;
 use tracing::{info, warn};
 use tracing_subscriber::EnvFilter;
-use agent_manager::{db::Database, error::AppResult, commands::connectors::ConnectorState};
+use agent_manager::{
+    db::Database,
+    error::AppResult,
+    commands::connectors::ConnectorState,
+    commands::runtime::RuntimeState,
+};
 
 fn main() -> AppResult<()> {
   init_logging();
@@ -34,6 +39,7 @@ fn main() -> AppResult<()> {
 
   tauri::Builder::default()
     .manage(ConnectorState::new())
+    .manage(RuntimeState::new())
     .invoke_handler(tauri::generate_handler![
       cmd_list_sessions,
       cmd_create_session,
@@ -44,6 +50,15 @@ fn main() -> AppResult<()> {
       agent_manager::commands::connectors::switch_codex_model,
       agent_manager::commands::connectors::check_ollama_health,
       agent_manager::commands::connectors::list_ollama_models,
+      agent_manager::commands::runtime::register_agent,
+      agent_manager::commands::runtime::unregister_agent,
+      agent_manager::commands::runtime::list_agents,
+      agent_manager::commands::runtime::get_agent_metadata,
+      agent_manager::commands::runtime::create_orchestrator,
+      agent_manager::commands::runtime::start_orchestrator,
+      agent_manager::commands::runtime::stop_orchestrator,
+      agent_manager::commands::runtime::get_orchestrator_metrics,
+      agent_manager::commands::runtime::get_queue_depth,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
