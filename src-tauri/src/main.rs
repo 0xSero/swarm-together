@@ -40,6 +40,7 @@ fn main() -> AppResult<()> {
       agent_manager::commands::connectors::init_connector,
       agent_manager::commands::connectors::get_connector_health,
       agent_manager::commands::connectors::get_connector_metrics,
+      agent_manager::commands::connectors::switch_codex_model,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

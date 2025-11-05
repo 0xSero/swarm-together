@@ -148,9 +148,86 @@ Retry behavior:
 - Configurable max retries (default: 3)
 - Health status updated on failures
 
+### Codex CLI (GPT-5 / GPT-5-Codex)
+
+Adapter for Codex CLI with support for GPT-5, GPT-5-Codex, and GPT-4.
+
+**Features:**
+- Interactive and headless mode support
+- Dynamic model switching via `/model` command
+- Stream stdout/stderr from the CLI process
+- Parse OpenAI usage objects and plain text output
+- Track token usage from OpenAI usage format
+- Automatic retry with exponential backoff
+- Configurable timeouts and environment variables
+- Health status monitoring
+
+**Configuration:**
+
+```rust
+use agent_manager::connectors::{ConnectorConfig, codex_cli::CodexCliConnector};
+use std::collections::HashMap;
+
+let config = ConnectorConfig {
+    cli_path: "/path/to/codex".to_string(),
+    flags: vec!["--interactive".to_string()],
+    env: HashMap::new(),
+    timeout_ms: Some(300000), // 5 minutes
+    max_retries: 3,
+};
+
+let connector = CodexCliConnector::new(config);
+```
+
+**Usage:**
+
+```rust
+// Execute a prompt with the default model (GPT-5)
+let mut rx = connector.execute("Write a sorting algorithm").await?;
+
+while let Some(msg) = rx.recv().await {
+    match msg {
+        ConnectorMessage::Content { content } => {
+            println!("Content: {}", content);
+        }
+        ConnectorMessage::Usage { input_tokens, output_tokens } => {
+            println!("Tokens: {} in, {} out", input_tokens, output_tokens);
+        }
+        ConnectorMessage::Done => break,
+        _ => {}
+    }
+}
+
+// Switch to GPT-5-Codex
+connector.switch_model(GptModel::Gpt5Codex).await?;
+
+// Execute another prompt with the new model
+let mut rx = connector.execute("Optimize this code").await?;
+// ... handle messages
+```
+
+**Supported Models:**
+
+- `GptModel::Gpt5`: GPT-5 general purpose model
+- `GptModel::Gpt5Codex`: GPT-5-Codex specialized for coding
+- `GptModel::Gpt4`: GPT-4 fallback model
+
+**OpenAI Usage Format:**
+
+The connector automatically parses OpenAI usage objects:
+
+```json
+{
+  "usage": {
+    "prompt_tokens": 100,
+    "completion_tokens": 50,
+    "total_tokens": 150
+  }
+}
+```
+
 ## Future Connectors
 
-- **Codex CLI (GPT-5)**: Planned in task 021
 - **Ollama Chat + Embeddings**: Planned in task 022
 
 ## Tauri Commands
@@ -160,7 +237,7 @@ Frontend can interact with connectors via Tauri commands:
 ```typescript
 import { invoke } from '@tauri-apps/api/tauri'
 
-// Initialize connector
+// Initialize Claude Code connector
 await invoke('init_connector', {
   request: {
     connector_type: 'claude_code',
@@ -174,13 +251,32 @@ await invoke('init_connector', {
   }
 })
 
+// Initialize Codex CLI connector
+await invoke('init_connector', {
+  request: {
+    connector_type: 'codex_cli',
+    config: {
+      cli_path: '/usr/local/bin/codex',
+      flags: ['--interactive'],
+      env: {},
+      timeout_ms: 300000,
+      max_retries: 3
+    }
+  }
+})
+
 // Get health status
 const health = await invoke('get_connector_health', {
-  connector_type: 'claude_code'
+  connector_type: 'claude_code' // or 'codex_cli'
 })
 
 // Get metrics
 const metrics = await invoke('get_connector_metrics', {
-  connector_type: 'claude_code'
+  connector_type: 'claude_code' // or 'codex_cli'
+})
+
+// Switch Codex CLI model
+await invoke('switch_codex_model', {
+  model: 'gpt-5-codex' // or 'gpt-5', 'gpt-4'
 })
 ```
