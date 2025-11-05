@@ -1,0 +1,15 @@
+node_modules
+dist
+target
+*.db
+*.sqlite
+.env
+.env.local
+.DS_Store
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.cargo
+src-tauri/target
