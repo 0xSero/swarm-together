@@ -5,3 +5,4 @@ pub mod error;
 pub mod connectors;
 pub mod commands;
 pub mod runtime;
+pub mod memory;
