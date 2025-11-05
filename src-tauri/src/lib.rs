@@ -6,3 +6,4 @@ pub mod connectors;
 pub mod commands;
 pub mod runtime;
 pub mod memory;
+pub mod session;
