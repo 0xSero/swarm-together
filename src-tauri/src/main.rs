@@ -38,9 +38,12 @@ fn main() -> AppResult<()> {
       cmd_list_sessions,
       cmd_create_session,
       agent_manager::commands::connectors::init_connector,
+      agent_manager::commands::connectors::init_ollama,
       agent_manager::commands::connectors::get_connector_health,
       agent_manager::commands::connectors::get_connector_metrics,
       agent_manager::commands::connectors::switch_codex_model,
+      agent_manager::commands::connectors::check_ollama_health,
+      agent_manager::commands::connectors::list_ollama_models,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

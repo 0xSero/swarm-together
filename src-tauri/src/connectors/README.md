@@ -226,9 +226,85 @@ The connector automatically parses OpenAI usage objects:
 }
 ```
 
-## Future Connectors
+### Ollama Chat + Embeddings
 
-- **Ollama Chat + Embeddings**: Planned in task 022
+Local model adapter with chat and embeddings support.
+
+**Features:**
+- Chat completions via local Ollama server
+- Embeddings generation (default: nomic-embed-text)
+- Model availability monitoring
+- Health checks and status tracking
+- Configurable host and port
+- Timeout handling with exponential backoff
+- Latency histograms and failure rates
+
+**Configuration:**
+
+```rust
+use agent_manager::connectors::ollama::{OllamaConfig, OllamaConnector};
+
+let config = OllamaConfig {
+    host: "http://localhost".to_string(),
+    port: 11434,
+    timeout_ms: 300000, // 5 minutes
+    max_retries: 3,
+    chat_model: "llama2".to_string(),
+    embedding_model: "nomic-embed-text".to_string(),
+};
+
+let connector = OllamaConnector::new(config);
+```
+
+**Usage:**
+
+```rust
+// Check if Ollama is available
+let is_healthy = connector.check_health().await?;
+
+// List available models
+let models = connector.list_models().await?;
+println!("Available models: {:?}", models);
+
+// Chat completion
+let mut rx = connector.chat("Write a function to sort an array").await?;
+
+while let Some(msg) = rx.recv().await {
+    match msg {
+        ConnectorMessage::Content { content } => {
+            println!("Response: {}", content);
+        }
+        ConnectorMessage::Usage { input_tokens, output_tokens } => {
+            println!("Tokens: {} in, {} out", input_tokens, output_tokens);
+        }
+        ConnectorMessage::Done => break,
+        _ => {}
+    }
+}
+
+// Generate embeddings
+let embedding = connector.embed("text to embed").await?;
+println!("Embedding dimension: {}", embedding.len());
+
+// Validate embedding
+assert!(OllamaConnector::validate_embedding(&embedding));
+```
+
+**Supported Models:**
+
+- Chat: llama2, codellama, mistral, or any Ollama-compatible model
+- Embeddings: nomic-embed-text (default), bge-small, e5-small
+
+**Response Format:**
+
+Ollama returns token counts via:
+```json
+{
+  "response": "...",
+  "prompt_eval_count": 100,
+  "eval_count": 50
+}
+```
 
 ## Tauri Commands
 
@@ -275,8 +351,26 @@ const metrics = await invoke('get_connector_metrics', {
   connector_type: 'claude_code' // or 'codex_cli'
 })
 
+// Initialize Ollama connector
+await invoke('init_ollama', {
+  config: {
+    host: 'http://localhost',
+    port: 11434,
+    timeout_ms: 300000,
+    max_retries: 3,
+    chat_model: 'llama2',
+    embedding_model: 'nomic-embed-text'
+  }
+})
+
 // Switch Codex CLI model
 await invoke('switch_codex_model', {
   model: 'gpt-5-codex' // or 'gpt-5', 'gpt-4'
 })
+
+// Check Ollama health (actual health check)
+const isHealthy = await invoke('check_ollama_health')
+
+// List Ollama models
+const models = await invoke('list_ollama_models')
 ```
