@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { usePaneStore, type Tab, type PanePosition, type PaneHistory } from '@/stores/paneStore'
-import { cn } from '@/lib/utils'
+import { BlockRenderer } from '@/components/blocks/BlockRenderer'
+import { useBlockOperations } from '@/hooks/useBlockOperations'
+import type { Block } from '@/types/blocks'
 
 interface PaneContentProps {
   tab: Tab
@@ -11,6 +13,7 @@ interface PaneContentProps {
 export function PaneContent({ tab, position, history }: PaneContentProps) {
   const contentRef = useRef<HTMLDivElement>(null)
   const { updateScrollPosition, recordRenderTime } = usePaneStore()
+  const { handleCopy, handleReRun, handleToggleBookmark, recordMetrics } = useBlockOperations(tab.sessionId)
 
   // Restore scroll position when tab becomes active
   useEffect(() => {
@@ -40,7 +43,7 @@ export function PaneContent({ tab, position, history }: PaneContentProps) {
   return (
     <div
       ref={contentRef}
-      className="h-full overflow-y-auto p-4 space-y-2"
+      className="h-full overflow-y-auto p-4 space-y-3"
       onScroll={handleScroll}
     >
       {blocks.length === 0 ? (
@@ -53,42 +56,17 @@ export function PaneContent({ tab, position, history }: PaneContentProps) {
           </div>
         </div>
       ) : (
-        blocks.map((block, index) => (
-          <HistoryBlock key={block.id || index} block={block} />
+        blocks.map((block: Block, index: number) => (
+          <BlockRenderer
+            key={block.id || index}
+            block={block}
+            onCopy={handleCopy}
+            onReRun={handleReRun}
+            onToggleBookmark={handleToggleBookmark}
+            onMetrics={recordMetrics}
+            showActions={true}
+          />
         ))
-      )}
-    </div>
-  )
-}
-
-interface HistoryBlockProps {
-  block: any // TODO: Type this properly with Block from session types
-}
-
-function HistoryBlock({ block }: HistoryBlockProps) {
-  const blockType = block.block_type || block.type || 'output'
-
-  const typeStyles = {
-    command: 'bg-primary/10 border-primary/30 text-primary',
-    output: 'bg-surface border-border text-text-high',
-    error: 'bg-danger/10 border-danger/30 text-danger',
-    conversation: 'bg-accent/10 border-accent/30 text-text-high',
-    artifact: 'bg-warning/10 border-warning/30 text-text-high',
-  }
-
-  const style = typeStyles[blockType as keyof typeof typeStyles] || typeStyles.output
-
-  return (
-    <div className={cn('rounded-md border p-3 font-mono text-sm', style)}>
-      {block.title && (
-        <div className="font-semibold mb-2 flex items-center justify-between">
-          <span>{block.title}</span>
-          <span className="text-xs opacity-70 capitalize">{blockType}</span>
-        </div>
-      )}
-      <pre className="whitespace-pre-wrap break-words">{block.content}</pre>
-      {block.bookmarked && (
-        <div className="mt-2 text-xs opacity-70">📌 Bookmarked</div>
       )}
     </div>
   )
