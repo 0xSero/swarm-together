@@ -1,0 +1,85 @@
+{
+  "name": "agent-manager-vscode",
+  "displayName": "Agent Manager",
+  "description": "Connect to Agent Manager sessions and stream output",
+  "version": "0.1.0",
+  "publisher": "agent-manager",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:agent-manager.connect",
+    "onCommand:agent-manager.disconnect",
+    "onCommand:agent-manager.sendCommand",
+    "onCommand:agent-manager.showOutput"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "agent-manager.connect",
+        "title": "Agent Manager: Connect to Session"
+      },
+      {
+        "command": "agent-manager.disconnect",
+        "title": "Agent Manager: Disconnect"
+      },
+      {
+        "command": "agent-manager.sendCommand",
+        "title": "Agent Manager: Send Command"
+      },
+      {
+        "command": "agent-manager.showOutput",
+        "title": "Agent Manager: Show Output Panel"
+      }
+    ],
+    "configuration": {
+      "title": "Agent Manager",
+      "properties": {
+        "agentManager.apiHost": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "API host address"
+        },
+        "agentManager.apiPort": {
+          "type": "number",
+          "default": 8080,
+          "description": "API port number"
+        },
+        "agentManager.apiToken": {
+          "type": "string",
+          "default": "dev-token-local",
+          "description": "Authentication token"
+        },
+        "agentManager.autoReconnect": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically reconnect on disconnect"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.0",
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.80.0",
+    "@types/ws": "^8.5.0",
+    "@vscode/test-electron": "^2.3.0",
+    "glob": "^8.1.0",
+    "mocha": "^10.2.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "ws": "^8.13.0"
+  }
+}
