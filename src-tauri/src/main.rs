@@ -4,7 +4,14 @@
 use std::path::PathBuf;
 use tracing::{info, warn};
 use tracing_subscriber::EnvFilter;
-use agent_manager::{db::Database, error::AppResult};
+use agent_manager::{
+    db::Database,
+    error::AppResult,
+    commands::connectors::ConnectorState,
+    commands::runtime::RuntimeState,
+    commands::session::SessionState,
+    session::SessionService,
+};
 
 fn main() -> AppResult<()> {
   init_logging();
@@ -22,35 +29,66 @@ fn main() -> AppResult<()> {
   info!("Database path: {:?}", db_path);
 
   let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio runtime");
-  rt.block_on(async {
-    match Database::init(&db_path).await {
-      Ok(_) => info!("Database initialized successfully"),
+  let session_state = rt.block_on(async {
+    let db = match Database::init(&db_path).await {
+      Ok(db) => {
+        info!("Database initialized successfully");
+        db
+      },
       Err(e) => {
         eprintln!("Failed to initialize database: {}", e);
         std::process::exit(1);
       }
-    }
+    };
+
+    let session_service = SessionService::new(db.pool().clone());
+    SessionState::new(session_service)
   });
 
   tauri::Builder::default()
+    .manage(ConnectorState::new())
+    .manage(RuntimeState::new())
+    .manage(session_state)
     .invoke_handler(tauri::generate_handler![
-      cmd_list_sessions,
-      cmd_create_session,
+      agent_manager::commands::connectors::init_connector,
+      agent_manager::commands::connectors::init_ollama,
+      agent_manager::commands::connectors::get_connector_health,
+      agent_manager::commands::connectors::get_connector_metrics,
+      agent_manager::commands::connectors::switch_codex_model,
+      agent_manager::commands::connectors::check_ollama_health,
+      agent_manager::commands::connectors::list_ollama_models,
+      agent_manager::commands::runtime::register_agent,
+      agent_manager::commands::runtime::unregister_agent,
+      agent_manager::commands::runtime::list_agents,
+      agent_manager::commands::runtime::get_agent_metadata,
+      agent_manager::commands::runtime::create_orchestrator,
+      agent_manager::commands::runtime::start_orchestrator,
+      agent_manager::commands::runtime::stop_orchestrator,
+      agent_manager::commands::runtime::get_orchestrator_metrics,
+      agent_manager::commands::runtime::get_queue_depth,
+      agent_manager::commands::session::create_session,
+      agent_manager::commands::session::get_session,
+      agent_manager::commands::session::list_sessions,
+      agent_manager::commands::session::update_session_status,
+      agent_manager::commands::session::delete_session,
+      agent_manager::commands::session::create_pane,
+      agent_manager::commands::session::list_panes,
+      agent_manager::commands::session::delete_pane,
+      agent_manager::commands::session::add_message,
+      agent_manager::commands::session::get_messages,
+      agent_manager::commands::session::get_pane_messages,
+      agent_manager::commands::session::get_next_sequence_number,
+      agent_manager::commands::session::create_block,
+      agent_manager::commands::session::get_blocks,
+      agent_manager::commands::session::toggle_bookmark,
+      agent_manager::commands::session::assemble_blocks,
+      agent_manager::commands::session::get_block_attachments,
+      agent_manager::commands::session::get_progress_timeline,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 
   Ok(())
-}
-
-#[tauri::command]
-fn cmd_list_sessions() -> Result<Vec<String>, String> {
-  Ok(vec![])
-}
-
-#[tauri::command]
-fn cmd_create_session(name: String) -> Result<String, String> {
-  Ok(format!("Created session: {}", name))
 }
 
 fn init_logging() {

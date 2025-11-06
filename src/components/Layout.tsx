@@ -1,11 +1,12 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { Settings, Layout as LayoutIcon } from 'lucide-react'
+import { Settings, Layout as LayoutIcon, Terminal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function Layout() {
   const location = useLocation()
 
   const navItems = [
+    { path: '/terminal', label: 'Terminal', icon: Terminal },
     { path: '/sessions', label: 'Sessions', icon: LayoutIcon },
     { path: '/settings', label: 'Settings', icon: Settings },
   ]
