@@ -7,3 +7,4 @@ pub mod commands;
 pub mod runtime;
 pub mod memory;
 pub mod session;
+pub mod api;
